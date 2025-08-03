@@ -15,15 +15,6 @@
 #   limitations under the License.
 #
 # ==================================================================================
-check_status() {
-    if [ $? -eq 0 ]; then
-        echo -e "\e[32m✓ $1 successful\e[0m"
-    else
-        echo -e "\e[31m✗ $1 failed\e[0m"
-        exit 1
-    fi
-}
-
 echo "Step 1: Disabling swap memory..."
 sudo swapoff -a
 sudo sed -i '/swap/s/^/#/' /etc/fstab
@@ -40,18 +31,15 @@ net.ipv4.ip_forward                 = 1
 EOF
 
 sudo sysctl --system
-check_status "Enabling IPv4 packet forwarding and loading kernel modules"
 
 echo "Step 3: Installing Containerd..."
 sudo apt update
 sudo apt install -y containerd
-check_status "Installing containerd"
 
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
 sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
 sudo systemctl restart containerd
-check_status "Configuring and restarting containerd"
 
 echo "Step 4: Installing Kubernetes packages..."
 sudo apt update && sudo apt install -y apt-transport-https ca-certificates curl
@@ -60,7 +48,6 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.
 sudo apt update && sudo apt install -y kubeadm=1.28.0-1.1 kubelet=1.28.0-1.1 kubectl=1.28.0-1.1
 sudo apt-mark hold kubelet kubeadm kubectl
 
-check_status "Installing Kubernetes packages"
 
 echo "Step 5: Initializing Kubernetes..."
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
@@ -86,7 +73,6 @@ done
 
 echo "Downloading and applying Flannel..."
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-check_status "Applying Flannel"
 
 echo "Installation completed for kubernetes!"
 
@@ -116,11 +102,9 @@ echo "https://github.com/moby/buildkit/releases/download/v${BUILDKIT_VERSION}/bu
 wget -q "https://github.com/moby/buildkit/releases/download/v${BUILDKIT_VERSION}/buildkit-v${BUILDKIT_VERSION}.linux-${archType}.tar.gz" -O /tmp/buildkit.tar.gz
 tar Cxzvvf /tmp /tmp/buildkit.tar.gz
 sudo mv /tmp/bin/buildctl /usr/bin/
-check_status "Installing buildkit"
 
 # run buildkit instance
 sudo nerdctl run -d --name buildkitd --privileged moby/buildkit:latest
-check_status "Running buildkitd instance"
 
 # install kustomize
 echo "Installing kustomize..."
@@ -129,6 +113,5 @@ curl -LO "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomi
 tar -xvzf "kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" 
 sudo mv kustomize /usr/local/bin/ 
 rm "kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
-check_status "Installing kustomize"
 
 echo "Kustomize installed successfully." 
