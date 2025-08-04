@@ -20,14 +20,6 @@ kubectl create namespace kubeflow
 sleep 10
 head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8 | kubectl create secret generic leofs-secret -n kubeflow --from-file=password=/dev/stdin
 
-sudo nerdctl rm -f buildkitd || true
-sudo nerdctl run -d --name buildkitd \
-  --network host \
-  --privileged \
-  -v buildkit-state:/var/lib/buildkit \
-  moby/buildkit:buildx-stable-1 \
-  buildkitd
-  
 sudo buildctl --addr=nerdctl-container://buildkitd build \
   --frontend dockerfile.v0 \
   --opt filename=Dockerfile.leofs \
