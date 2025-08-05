@@ -72,7 +72,7 @@ do
 done
 
 echo "Step 6: Applying CNI plugin..."
-if grep -qi microsoft /proc/version 2>/dev/null || [ -n "$WSL_DISTRO_NAME" ] || [ -n "$WSL_INTEROP" ]; then
+if is_wsl; then
   echo "WSL environment — Flannel CNI"
   curl -fSL "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml" -o kube-flannel.yml
   kubectl apply -f kube-flannel.yml
